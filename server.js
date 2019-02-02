@@ -31,9 +31,17 @@ const apiKey = '48febd2e7ae455a1b2e8ab15eef19f3b';
 
     if (! storedItem) {
       console.log(`${city} not found. Setting value in database.`);
+
+      let weatherText = `${city} not found. Setting value in database!`;
+      res.render('index', {weather: weatherText, error: null});
+
       await storage.setItem(city, 'YAYAYAY');
     } else {
       console.log(`${city} found!`);
+
+      let weatherText = `${city} found. Here's the value: ${storedItem}`;
+      res.render('index', {weather: weatherText, error: null});
+
       console.log(storedItem);
     }
 
