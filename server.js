@@ -2,35 +2,33 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request');
 const app = express();
-
 const storage = require('node-persist');
-
 
 const apiKey = '48febd2e7ae455a1b2e8ab15eef19f3b';
 
-const callWeather = function(city) {
-  console.log(`callWeather called, with ${city}!`);
+// TODO - I think I can now make this an async function if I want to use await down below.
+function callWeather(city, callback) {
   let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${apiKey}`
-  return url;
-/*
-  request(url, function (err, response, body) {
-    return 
 
-    
-    if(err){
-      res.render('index', {weather: null, error: 'Error, please try again'});
-    } else {
+  request(url, function (err, response, body) {
+    // console.log(response.statusCode);
+    if (!err && response.statusCode == 200) {
+      // console.log('No Error and response 200');
       let weather = JSON.parse(body);
-      console.log(weather.main);
 
       if(weather.main == undefined){
-        res.render('index', {weather: null, error: 'Error, please try again'});
+        // console.log(weather.main);
+        return callback(null, err);
       } else {
-        let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
-        res.render('index', {weather: weatherText, error: null});
+        // console.log(weather.main);
+        return callback(weather, null);
       }
+    } else {
+      // TODO - Do this a bit better - look at the weather site's response codes and what they mean.
+      err = 'There was an error';
+      return callback(null, err);
     }
-  }); */
+  }); 
 };
 
 (async () => {
@@ -47,8 +45,9 @@ const callWeather = function(city) {
 
   app.post('/', async function (req, res) {
     let city = req.body.city;
-    console.log(`post with ${city} called`);
+    // console.log(`post with ${city} called`);
 
+    // TODO - Add these database call things in.
 /*
     console.log(`checking database for ${city}`);
     let storedItem = await storage.getItem(city);
@@ -69,10 +68,17 @@ const callWeather = function(city) {
       console.log(storedItem);
     }
 */
-    let newurl = callWeather(city);
-    console.log(newurl);
 
-    
+    callWeather(city, function(weather, err) {
+      if (err) {
+        // console.log('Error Returned');
+        res.render('index', {weather: null, error: 'Error, please try again'});
+      } else {
+        // console.log('No Error Returned');
+        let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
+        res.render('index', {weather: weatherText, error: null});
+      }
+    });  
   });
 
   app.listen(3000, function () {
