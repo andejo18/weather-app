@@ -5,6 +5,7 @@ const app = express();
 const storage = require('node-persist');
 
 const apiKey = '48febd2e7ae455a1b2e8ab15eef19f3b';
+const constDefaultCityKey = 'defaultcity'
 
 // TODO - I think I can now make this an async function if I want to use await down below.
 function callWeather(city, callback) {
@@ -41,7 +42,7 @@ function callWeather(city, callback) {
   app.set('view engine', 'ejs');
 
   app.get('/', function (req, res) {
-    res.render('index', {weather: null, error: null});
+    res.render('index', {weather: null, error: null, defaultcitymessage: null});
   });
 
 
@@ -67,25 +68,52 @@ function callWeather(city, callback) {
 
           await storage.setItem(city, weather.main.temp);
 
-          res.render('index', {weather: weatherText, error: null});
+          res.render('index', {weather: weatherText, error: null, defaultcitymessage: null});
         }
       });
-
-      // res.render('index', {weather: weatherText, error: null});
-
-      // await storage.setItem(city, 'YAYAYAY');
     } else {
       console.log(`${city} found!`);
 
       let weatherText = `Cached value for ${city} found.\nThe last time you called OpenWeather for ${city} it was ${storedItem}ºF.`;
-      res.render('index', {weather: weatherText, error: null});
+      res.render('index', {weather: weatherText, error: null, defaultcitymessage: null});
 
       console.log(storedItem);
     }
-    
+  });
+
+  app.post('/defaultcity/', async function (req, res) {
+    let defaultcity = req.body.defaultcity;
+       
+    console.log(`checking database for ${defaultcity}`);
+    let existingDefaultCity = await storage.getItem(constDefaultCityKey);
+
+    if (! existingDefaultCity) {
+      console.log(`Default does not exist, setting value in database.`);
+
+      await storage.setItem(constDefaultCityKey, defaultcity);
+      
+      let message = `${defaultcity} set as default city.`;
+
+      res.render('index', {weather: null, error: null, defaultcitymessage: message});
+    } else {
+      console.log(`Default already set as ${existingDefaultCity}!`);
+
+      let message = `Cannot Set! Default already set as ${existingDefaultCity}`;
+      
+      res.render('index', {weather: null, error: null, defaultcitymessage: message});
+    }
   });
 
   app.listen(3000, function () {
     console.log('Example app listening on port 3000!');
   });
 })();
+
+
+
+
+
+
+
+
+

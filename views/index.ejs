@@ -21,5 +21,17 @@
         <% } %>
       </fieldset>
     </div>
+    <div class="container">
+      <fieldset>
+        <h2>Save a city</h2>
+        <form action="/defaultcity/" method="post">
+          <input name="defaultcity" type="text" class="ghost-input" placeholder="Enter a Default City" required>
+          <input type="submit" class="ghost-button" value="Save City">
+        </form>
+        <% if(defaultcitymessage !== null){ %>
+          <p><%= defaultcitymessage %></p>
+        <% } %>
+      </fieldset>
+    </div>
   </body>
 </html>
