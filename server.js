@@ -32,7 +32,9 @@ function callWeather(city, callback) {
 };
 
 (async () => {
+  // We should set a default ttl. 
   await storage.init();
+  await storage.clear();
 
   app.use(express.static('public'));
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -45,10 +47,7 @@ function callWeather(city, callback) {
 
   app.post('/', async function (req, res) {
     let city = req.body.city;
-    // console.log(`post with ${city} called`);
-
-    // TODO - Add these database call things in.
-/*
+       
     console.log(`checking database for ${city}`);
     let storedItem = await storage.getItem(city);
 
@@ -56,29 +55,34 @@ function callWeather(city, callback) {
       console.log(`${city} not found. Setting value in database.`);
 
       let weatherText = `${city} not found. Setting value in database!`;
-      res.render('index', {weather: weatherText, error: null});
 
-      await storage.setItem(city, 'YAYAYAY');
+      callWeather(city, async function(weather, err) {
+        if (err) {
+          // console.log('Error Returned');
+          /* End ************************************************************ */
+          res.render('index', {weather: null, error: 'Error, please try again'});
+        } else {
+          // console.log('No Error Returned');
+          let weatherText = `Cached value for ${city} not found. Call made to OpenWeather.\nIt's ${weather.main.temp}ºF in ${city}!`;
+
+          await storage.setItem(city, weather.main.temp);
+
+          res.render('index', {weather: weatherText, error: null});
+        }
+      });
+
+      // res.render('index', {weather: weatherText, error: null});
+
+      // await storage.setItem(city, 'YAYAYAY');
     } else {
       console.log(`${city} found!`);
 
-      let weatherText = `${city} found. Here's the value: ${storedItem}`;
+      let weatherText = `Cached value for ${city} found.\nThe last time you called OpenWeather for ${city} it was ${storedItem}ºF.`;
       res.render('index', {weather: weatherText, error: null});
 
       console.log(storedItem);
     }
-*/
-
-    callWeather(city, function(weather, err) {
-      if (err) {
-        // console.log('Error Returned');
-        res.render('index', {weather: null, error: 'Error, please try again'});
-      } else {
-        // console.log('No Error Returned');
-        let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
-        res.render('index', {weather: weatherText, error: null});
-      }
-    });  
+    
   });
 
   app.listen(3000, function () {
