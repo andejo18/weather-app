@@ -35,16 +35,17 @@ function callWeather(city, callback) {
 (async () => {
   // We should set a default ttl. 
   await storage.init();
-  await storage.clear();
+  // await storage.clear();
 
   app.use(express.static('public'));
   app.use(bodyParser.urlencoded({ extended: true }));
   app.set('view engine', 'ejs');
 
-  app.get('/', function (req, res) {
-    res.render('index', {weather: null, error: null, defaultcitymessage: null});
-  });
+  let defaultCityValue = await storage.getItem(constDefaultCityKey);
 
+  app.get('/', function (req, res) {
+    res.render('index', {weather: null, error: null, defaultcitymessage: null, defaultcity: defaultCityValue});
+  });
 
   app.post('/', async function (req, res) {
     let city = req.body.city;
@@ -68,14 +69,14 @@ function callWeather(city, callback) {
 
           await storage.setItem(city, weather.main.temp);
 
-          res.render('index', {weather: weatherText, error: null, defaultcitymessage: null});
+          res.render('index', {weather: weatherText, error: null, defaultcitymessage: null, defaultcity: null});
         }
       });
     } else {
       console.log(`${city} found!`);
 
       let weatherText = `Cached value for ${city} found.\nThe last time you called OpenWeather for ${city} it was ${storedItem}ºF.`;
-      res.render('index', {weather: weatherText, error: null, defaultcitymessage: null});
+      res.render('index', {weather: weatherText, error: null, defaultcitymessage: null, defaultcity: null});
 
       console.log(storedItem);
     }
@@ -91,16 +92,18 @@ function callWeather(city, callback) {
       console.log(`Default does not exist, setting value in database.`);
 
       await storage.setItem(constDefaultCityKey, defaultcity);
-      
+
       let message = `${defaultcity} set as default city.`;
 
-      res.render('index', {weather: null, error: null, defaultcitymessage: message});
+      res.render('index', {weather: null, error: null, defaultcitymessage: message, defaultcity: defaultcity});
     } else {
-      console.log(`Default already set as ${existingDefaultCity}!`);
-
-      let message = `Cannot Set! Default already set as ${existingDefaultCity}`;
+      console.log(`Default already set as ${existingDefaultCity}. Overwriting!`);
       
-      res.render('index', {weather: null, error: null, defaultcitymessage: message});
+      await storage.setItem(constDefaultCityKey, defaultcity);
+      
+      let message = `Default of ${existingDefaultCity} overridden with ${defaultcity}`;
+
+      res.render('index', {weather: null, error: null, defaultcitymessage: message, defaultcity: defaultcity});
     }
   });
 
